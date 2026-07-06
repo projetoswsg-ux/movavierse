@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Moneroverse</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #ff99cc;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            cursor: default;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #instrucoes {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffe6f0;
+            text-align: center;
+            pointer-events: none;
+            text-shadow: 2px 2px 8px rgba(120, 0, 60, 0.8);
+            background: rgba(180, 60, 120, 0.7);
+            backdrop-filter: blur(6px);
+            padding: 24px 30px;
+            border-radius: 30px;
+            border: 2px solid #ffb3d1;
+            transition: opacity 0.6s ease-out;
+            z-index: 10;
+            width: 80%;
+            max-width: 400px;
+            box-shadow: 0 0 40px rgba(255, 80, 180, 0.5);
+        }
+        .dica {
+            font-size: 17px;
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+        .titulo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd9e6;
+            text-shadow: 0 0 20px #ff66aa;
+            margin-bottom: 10px;
+        }
+
+        #aviso-portal {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            background: rgba(255, 80, 200, 0.8);
+            backdrop-filter: blur(6px);
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border: 2px solid #ffb3d1;
+            box-shadow: 0 0 30px #ff66aa;
+            z-index: 30;
+            opacity: 0;
+            transition: opacity 0.4s;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+        }
+        #aviso-portal.visivel {
+            opacity: 1;
+        }
+
+        #controles-pc {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 12px;
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 5;
+            font-family: monospace;
+        }
+
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 30px;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-family: monospace;
+        }
+        #crosshair.visivel {
+            opacity: 1;
+        }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js">
+    </script>
+</head>
+<body>
+
+    <div id="instrucoes">
+        <div class="titulo"></div>
+        <div class="dica"> <b>Left side:</b> Drag to Walk | <b>WASD</b> to Walk</div>
+        <div class="dica"> <b>Right Side:</b> Drag to Look | <b>Mouse</b> to Look</div>
+        <div style="margin-top: 18px; font-size: 14px; color: #ffcce0;">Go through the portal to get back</div>
+    </div>
+
+    <div id="aviso-portal">Browser...</div>
+   
+
+    <div id="canvas-container"></div>
+
+    <script>
+        // ──────────────────────────────────────────────
+        // 1. VARIÁVEIS GLOBAIS
+        // ──────────────────────────────────────────────
+        let scene, camera, renderer;
+        let clock = new THREE.Clock();
+
+        const touchEsquerdo = { ativo: false, id: null, inicioX: 0, inicioY: 0, deltaX: 0, deltaY: 0 };
+        const touchDireito = { ativo: false, id: null, ultimoX: 0, ultimoY: 0 };
+
+        // Controles de teclado (INVERTIDOS: W = trás, S = frente)
+        const teclas = {
+            w: false, // Agora é "trás"
+            a: false,
+            s: false, // Agora é "frente"
+            d: false
+        };
+
+        // Controle de mouse para visão
+        let mousePreso = false;
+        let mouseMovimentoX = 0;
+        let mouseMovimentoY = 0;
+
+        const velMovimento = 8.0;
+        const velVisao = 0.005;
+        const alturaOlhos = 1.6;
+        let cameraEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+
+        const corCeu = 0xff99cc;
+        const corNevoa = 0x8899aa;
+        const distNevoa = 8;
+        const distNevoaMax = 35;
+
+        const corGrid = 0xffaacc;
+
+        let textMoneroKon = null;
+        let textMonerotopia = null;
+        let portaMoneroKon = null;
+        let portaMonerotopia = null;
+
+        // Áreas de detecção (ajustadas para a face frontal do cubo)
+        const OFFSET = 0.05;
+        const areaPortaKon = { minX: -6.6, maxX: -5.4, minZ: -4.45, maxZ: -3.45 };
+        const areaPortaTopia = { minX: 5.4, maxX: 6.6, minZ: 3.35, maxZ: 4.55 };
+
+        // Destinos específicos
+        const DESTINO_KON = 'https://www.monerokon.org';
+        const DESTINO_TOPIA = 'https://monerotopia.com';
+        const DESTINO_MONEROVERSE = 'https://moneroverse.com/universe.html';
+
+        let jaRedirecionouKon = false;
+        let jaRedirecionouTopia = false;
+        let jaRedirecionouMoneroverse = false;
+
+        const aviso = document.getElementById('aviso-portal');
+        const crosshair = document.getElementById('crosshair');
+        let muroMagico = null;
+        let nuvensNevoa = null;
+        let portalPretoEstrelas = null;
+
+        // Lista de cubos para colisão (AABBs)
+        const listaCubos = [];
+
+        // ──────────────────────────────────────────────
+        // 2. INICIALIZAÇÃO
+        // ──────────────────────────────────────────────
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(corCeu);
+            scene.fog = new THREE.Fog(corNevoa, distNevoa, distNevoaMax);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, alturaOlhos, 17.0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            const luzAmbiente = new THREE.AmbientLight(0xffccdd, 0.6);
+            scene.add(luzAmbiente);
+
+            const luzDirecional = new THREE.DirectionalLight(0xffddff, 0.9);
+            luzDirecional.position.set(10, 20, 10);
+            luzDirecional.castShadow = true;
+            luzDirecional.shadow.camera.top = 20;
+            luzDirecional.shadow.camera.bottom = -20;
+            luzDirecional.shadow.camera.left = -20;
+            luzDirecional.shadow.camera.right = 20;
+            scene.add(luzDirecional);
+
+            const luzFill = new THREE.PointLight(0xff88aa, 0.5, 30);
+            luzFill.position.set(-5, 5, 5);
+            scene.add(luzFill);
+
+            criarChao();
+            criarMuroMagico();
+            criarNevoa();
+            criarPortalPretoEstrelas();
+            carregarTextosEPortas();
+
+            window.addEventListener('resize', onWindowResize, false);
+
+            // Eventos de toque
+            const areaTouch = document.body;
+            areaTouch.addEventListener('touchstart', onTouchStart, { passive: false });
+            areaTouch.addEventListener('touchmove', onTouchMove, { passive: false });
+            areaTouch.addEventListener('touchend', onTouchEnd, { passive: false });
+            areaTouch.addEventListener('touchcancel', onTouchEnd, { passive: false });
+
+            // Eventos de teclado (PC)
+            document.addEventListener('keydown', onKeyDown, false);
+            document.addEventListener('keyup', onKeyUp, false);
+
+            // Eventos de mouse (PC) - CORRIGIDOS
+            renderer.domElement.addEventListener('click', onCanvasClick, false);
+            document.addEventListener('mousemove', onMouseMove, false);
+            document.addEventListener('pointerlockchange', onPointerLockChange, false);
+
+            animate();
+        }
+
+        // ──────────────────────────────────────────────
+        // 3. CHÃO COM GRAMA ROSA
+        // ──────────────────────────────────────────────
+        function criarTexturaGramaRosa() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#a06080';
+            ctx.fillRect(0, 0, 256, 256);
+
+            for (let i = 0; i < 5000; i++) {
+                const x = Math.random() * 256;
+                const y = Math.random() * 256;
+                const altura = 2 + Math.random() * 8;
+                const r = 150 + Math.random() * 105;
+                const g = 40 + Math.random() * 80;
+                const b = 80 + Math.random() * 100;
+                ctx.strokeStyle = `rgb(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)})`;
+                ctx.lineWidth = 1 + Math.random() * 2;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + (Math.random() - 0.5) * 4, y - altura);
+                ctx.stroke();
+            }
+
+            for (let i = 0; i < 60; i++) {
+                const x = Math.random() * 256;
+                const y = Math.random() * 256;
+                const raio = 3 + Math.random() * 10;
+                const r = 200 + Math.random() * 55;
+                const g = 80 + Math.random() * 60;
+                const b = 120 + Math.random() * 70;
+                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.15)`;
+                ctx.beginPath();
+                ctx.arc(x, y, raio, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(20, 20);
+            texture.anisotropy = 4;
+            return texture;
+        }
+
+        function criarChao() {
+            const texturaGrama = criarTexturaGramaRosa();
+            const materialChao = new THREE.MeshStandardMaterial({
+                map: texturaGrama,
+                roughness: 0.9,
+                metalness: 0.0,
+                emissive: new THREE.Color(0x552233),
+                emissiveIntensity: 0.08
+            });
+            const geometriaChao = new THREE.PlaneGeometry(100, 100);
+            const malhaChao = new THREE.Mesh(geometriaChao, materialChao);
+            malhaChao.rotation.x = -Math.PI / 2;
+            malhaChao.receiveShadow = true;
+            scene.add(malhaChao);
+
+            const grid = new THREE.GridHelper(100, 100, corGrid, 0xaa6688);
+            grid.position.y = 0.03;
+            grid.material.opacity = 0.2;
+            grid.material.transparent = true;
+            scene.add(grid);
+        }
+
+        // ──────────────────────────────────────────────
+        // 3b. NÉVOA EM PARTÍCULAS
+        // ──────────────────────────────────────────────
+        function criarNevoa() {
+            const count = 800;
+            const posicoes = new Float32Array(count * 3);
+            const opacidades = new Float32Array(count);
+            for (let i = 0; i < count; i++) {
+                const ang = Math.random() * Math.PI * 2;
+                const r = 5 + Math.random() * 25;
+                const y = Math.random() * 12 + 1;
+                posicoes[i * 3] = Math.cos(ang) * r;
+                posicoes[i * 3 + 1] = y;
+                posicoes[i * 3 + 2] = Math.sin(ang) * r;
+                opacidades[i] = 0.1 + Math.random() * 0.3;
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(posicoes, 3));
+            geo.setAttribute('opacity', new THREE.BufferAttribute(opacidades, 1));
+
+            const mat = new THREE.PointsMaterial({
+                color: 0xccddee,
+                size: 1.2 + Math.random() * 1.5,
+                transparent: true,
+                opacity: 0.15,
+                blending: THREE.NormalBlending,
+                depthWrite: false,
+                sizeAttenuation: true,
+                map: criarTexturaNuvem()
+            });
+            nuvensNevoa = new THREE.Points(geo, mat);
+            scene.add(nuvensNevoa);
+
+            nuvensNevoa.userData = {
+                velocidades: Array.from({ length: count }, () => ({
+                    ang: (Math.random() - 0.5) * 0.002,
+                    yVel: (Math.random() - 0.5) * 0.003
+                })),
+                posInicial: posicoes.slice()
+            };
+        }
+
+        function criarTexturaNuvem() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            grad.addColorStop(0, 'rgba(255,255,255,1)');
+            grad.addColorStop(0.5, 'rgba(220,230,240,0.8)');
+            grad.addColorStop(1, 'rgba(200,210,220,0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 64, 64);
+            const texture = new THREE.CanvasTexture(canvas);
+            return texture;
+        }
+
+        // ──────────────────────────────────────────────
+        // 3c. MURO MÁGICO
+        // ──────────────────────────────────────────────
+        function criarMuroMagico() {
+            const raio = 20.5;
+            const alturaMuro = 4.5;
+            const segmentos = 64;
+
+            const texturaMuro = gerarTexturaRedemoinhoMuro(1024, 512);
+
+            const geometriaCilindro = new THREE.CylinderGeometry(raio, raio, alturaMuro, segmentos, 1, true);
+            const materialCilindro = new THREE.MeshStandardMaterial({
+                map: texturaMuro,
+                emissiveMap: texturaMuro,
+                emissive: new THREE.Color(0xffffff),
+                emissiveIntensity: 1.0,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide,
+                roughness: 0.2,
+                metalness: 0.1,
+                wireframe: false
+            });
+            const muro = new THREE.Mesh(geometriaCilindro, materialCilindro);
+            muro.position.y = alturaMuro / 2;
+            muro.castShadow = false;
+            muro.receiveShadow = false;
+            scene.add(muro);
+
+            const geoAnelBase = new THREE.TorusGeometry(raio, 0.2, 16, segmentos);
+            const matAnelBase = new THREE.MeshStandardMaterial({
+                color: 0xcc88ff,
+                emissive: 0x8833aa,
+                emissiveIntensity: 0.8,
+                roughness: 0.3,
+                metalness: 0.4,
+                transparent: true,
+                opacity: 0.9
+            });
+            const anelBase = new THREE.Mesh(geoAnelBase, matAnelBase);
+            anelBase.rotation.x = Math.PI / 2;
+            anelBase.position.y = 0.1;
+            scene.add(anelBase);
+
+            const geoAnelTopo = new THREE.TorusGeometry(raio, 0.2, 16, segmentos);
+            const matAnelTopo = new THREE.MeshStandardMaterial({
+                color: 0xff88dd,
+                emissive: 0xff44aa,
+                emissiveIntensity: 0.8,
+                roughness: 0.3,
+                metalness: 0.4,
+                transparent: true,
+                opacity: 0.9
+            });
+            const anelTopo = new THREE.Mesh(geoAnelTopo, matAnelTopo);
+            anelTopo.rotation.x = Math.PI / 2;
+            anelTopo.position.y = alturaMuro;
+            scene.add(anelTopo);
+
+            const numPilares = 30;
+            const coresPilar = [0xff66aa, 0xaa66ff, 0x66ccff, 0xffaa66];
+            for (let i = 0; i < numPilares; i++) {
+                const ang = (i / numPilares) * Math.PI * 2;
+                const x = Math.cos(ang) * (raio + 0.3);
+                const z = Math.sin(ang) * (raio + 0.3);
+                const cor = coresPilar[i % coresPilar.length];
+                const geoViga = new THREE.CylinderGeometry(0.06, 0.1, alturaMuro, 6);
+                const matViga = new THREE.MeshStandardMaterial({
+                    color: cor,
+                    emissive: cor,
+                    emissiveIntensity: 0.4,
+                    transparent: true,
+                    opacity: 0.5
+                });
+                const viga = new THREE.Mesh(geoViga, matViga);
+                viga.position.set(x, alturaMuro / 2, z);
+                viga.castShadow = true;
+                scene.add(viga);
+
+                const geoEsfera = new THREE.SphereGeometry(0.15, 6, 6);
+                const matEsfera = new THREE.MeshStandardMaterial({
+                    color: 0xffffff,
+                    emissive: cor,
+                    emissiveIntensity: 1.0
+                });
+                const esfera = new THREE.Mesh(geoEsfera, matEsfera);
+                esfera.position.set(x, alturaMuro + 0.1, z);
+                scene.add(esfera);
+            }
+
+            const count = 300;
+            const posicoes = new Float32Array(count * 3);
+            const velocidades = [];
+            for (let i = 0; i < count; i++) {
+                const ang = Math.random() * Math.PI * 2;
+                const r = raio + (Math.random() - 0.5) * 1.2;
+                const y = Math.random() * alturaMuro;
+                posicoes[i * 3] = Math.cos(ang) * r;
+                posicoes[i * 3 + 1] = y;
+                posicoes[i * 3 + 2] = Math.sin(ang) * r;
+                velocidades.push({
+                    ang: ang,
+                    raio: r,
+                    yVel: (Math.random() - 0.5) * 0.4,
+                    y: y
+                });
+            }
+            const geoPart = new THREE.BufferGeometry();
+            geoPart.setAttribute('position', new THREE.BufferAttribute(posicoes, 3));
+            const matPart = new THREE.PointsMaterial({
+                color: 0xffaaff,
+                size: 0.06,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                opacity: 0.7
+            });
+            const particulas = new THREE.Points(geoPart, matPart);
+            scene.add(particulas);
+
+            muroMagico = {
+                muro: muro,
+                textura: texturaMuro,
+                anelBase: anelBase,
+                anelTopo: anelTopo,
+                particulas: particulas,
+                particulasPos: posicoes,
+                velocidades: velocidades,
+                count: count,
+                materialCilindro: materialCilindro,
+                offset: 0
+            };
+        }
+
+        function gerarTexturaRedemoinhoMuro(largura, altura) {
+            const canvas = document.createElement('canvas');
+            canvas.width = largura;
+            canvas.height = altura;
+            const ctx = canvas.getContext('2d');
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(largura, altura) * 0.7);
+            grad.addColorStop(0, '#ffffff');
+            grad.addColorStop(0.1, '#ff88cc');
+            grad.addColorStop(0.3, '#aa66ff');
+            grad.addColorStop(0.5, '#66ccff');
+            grad.addColorStop(0.7, '#88ff66');
+            grad.addColorStop(0.9, '#ffaa44');
+            grad.addColorStop(1, '#ff4488');
+
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            for (let i = 0; i < 30; i++) {
+                const ang = (i / 30) * Math.PI * 2;
+                const r = 40 + i * 25;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, r, r * 1.5, ang, 0, Math.PI * 2);
+                ctx.strokeStyle = `hsl(${i * 20 + 200}, 90%, 70%)`;
+                ctx.lineWidth = 18 - i * 0.3;
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            const grad2 = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 120);
+            grad2.addColorStop(0, 'rgba(255,255,255,0.7)');
+            grad2.addColorStop(0.5, 'rgba(255,200,200,0.3)');
+            grad2.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = grad2;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(2, 1);
+            return texture;
+        }
+
+        // ──────────────────────────────────────────────
+        // 3d. PORTAL PRETO COM ESTRELAS
+        // ──────────────────────────────────────────────
+        function criarPortalPretoEstrelas() {
+            const grupo = new THREE.Group();
+
+            const posX = 0;
+            const posY = 2.25;
+            const posZ = 19.2;
+            grupo.position.set(posX, posY, posZ);
+            grupo.lookAt(0, posY, 0);
+
+            const raioPortal = 2.5;
+            const geoDisco = new THREE.CircleGeometry(raioPortal, 48);
+            const matDisco = new THREE.MeshStandardMaterial({
+                color: 0x000000,
+                emissive: 0x111122,
+                emissiveIntensity: 0.3,
+                roughness: 0.4,
+                metalness: 0.1,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.92
+            });
+            const disco = new THREE.Mesh(geoDisco, matDisco);
+            disco.position.z = 0.01;
+            grupo.add(disco);
+
+            const numEstrelas = 400;
+            const posEstrelas = new Float32Array(numEstrelas * 3);
+            const tamanhos = new Float32Array(numEstrelas);
+            const cores = new Float32Array(numEstrelas * 3);
+            for (let i = 0; i < numEstrelas; i++) {
+                const ang = Math.random() * Math.PI * 2;
+                const r = Math.sqrt(Math.random()) * raioPortal * 0.95;
+                const x = Math.cos(ang) * r;
+                const y = Math.sin(ang) * r;
+                posEstrelas[i * 3] = x;
+                posEstrelas[i * 3 + 1] = y;
+                posEstrelas[i * 3 + 2] = (Math.random() - 0.5) * 0.15;
+
+                tamanhos[i] = 0.02 + Math.random() * 0.08;
+
+                const brilho = 0.6 + Math.random() * 0.4;
+                cores[i * 3] = brilho;
+                cores[i * 3 + 1] = brilho * (0.8 + Math.random() * 0.2);
+                cores[i * 3 + 2] = 1.0;
+            }
+            const geoEstrelas = new THREE.BufferGeometry();
+            geoEstrelas.setAttribute('position', new THREE.BufferAttribute(posEstrelas, 3));
+            geoEstrelas.setAttribute('size', new THREE.BufferAttribute(tamanhos, 1));
+            geoEstrelas.setAttribute('color', new THREE.BufferAttribute(cores, 3));
+
+            const matEstrelas = new THREE.PointsMaterial({
+                size: 0.08,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                sizeAttenuation: true
+            });
+            const estrelas = new THREE.Points(geoEstrelas, matEstrelas);
+            estrelas.position.z = 0.02;
+            grupo.add(estrelas);
+
+            const geoAnel = new THREE.TorusGeometry(raioPortal * 0.98, 0.06, 16, 64);
+            const matAnel = new THREE.MeshStandardMaterial({
+                color: 0x8888ff,
+                emissive: 0x4444aa,
+                emissiveIntensity: 1.0,
+                transparent: true,
+                opacity: 0.7
+            });
+            const anel = new THREE.Mesh(geoAnel, matAnel);
+            anel.position.z = 0.03;
+            anel.rotation.x = Math.PI / 2;
+            grupo.add(anel);
+
+            const luz = new THREE.PointLight(0x4466ff, 0.6, 6);
+            luz.position.set(0, 0, 0.4);
+            grupo.add(luz);
+
+            grupo.userData = {
+                estrelas: estrelas,
+                anel: anel,
+                matAnel: matAnel,
+                matDisco: matDisco,
+                luz: luz,
+                offset: 0
+            };
+
+            scene.add(grupo);
+            portalPretoEstrelas = grupo;
+
+            window.areaPortalMoneroverse = {
+                minX: -1.5,
+                maxX: 1.5,
+                minZ: 19.0,
+                maxZ: 22.0
+            };
+        }
+
+        // ──────────────────────────────────────────────
+        // 4. FACHADAS EM CUBO
+        // ──────────────────────────────────────────────
+        function criarFachadaCubo(x, z, rotacaoY, cor) {
+            const largura = 10.0;
+            const altura = 4.6;
+            const profundidade = 4.6;
+
+            const geo = new THREE.BoxGeometry(largura, altura, profundidade);
+            const mat = new THREE.MeshStandardMaterial({
+                color: cor,
+                roughness: 0.5,
+                metalness: 0.2,
+                emissive: cor,
+                emissiveIntensity: 0.1,
+                side: THREE.DoubleSide
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            const posZ = z - (profundidade / 2);
+            mesh.position.set(x, 2.3, posZ);
+            mesh.rotation.y = rotacaoY;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+
+            const bordaMat = new THREE.LineBasicMaterial({ color: 0xffdd99, transparent: true, opacity: 0.2 });
+            const bordaGeo = new THREE.EdgesGeometry(geo);
+            const borda = new THREE.LineSegments(bordaGeo, bordaMat);
+            borda.position.copy(mesh.position);
+            borda.rotation.copy(mesh.rotation);
+            scene.add(borda);
+
+            const recuo = 0.2;
+            const halfW = largura / 2 - recuo;
+            const halfD = profundidade / 2 - recuo;
+            const cx = mesh.position.x;
+            const cz = mesh.position.z;
+            const cubo = {
+                minX: cx - halfW,
+                maxX: cx + halfW,
+                minZ: cz - halfD,
+                maxZ: cz + halfD
+            };
+            listaCubos.push(cubo);
+
+            return mesh;
+        }
+
+        // ──────────────────────────────────────────────
+        // 5. TEXTOS E PORTAS
+        // ──────────────────────────────────────────────
+        function carregarTextosEPortas() {
+            const loader = new THREE.FontLoader();
+            const urlFonte = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_regular.typeface.json';
+
+            loader.load(urlFonte, function(font) {
+                criarFachadaCubo(-6, -4, 0, 0x225522);
+                criarFachadaCubo(6, 4, Math.PI, 0x884422);
+
+                const geo1 = new THREE.TextGeometry('MoneroKon', {
+                    font: font,
+                    size: 0.8,
+                    height: 0.2,
+                    curveSegments: 12,
+                    bevelEnabled: true,
+                    bevelThickness: 0.02,
+                    bevelSize: 0.02,
+                    bevelSegments: 5
+                });
+                const mat1 = new THREE.MeshStandardMaterial({
+                    color: 0x66ff00,
+                    emissive: 0x33aa00,
+                    emissiveIntensity: 0.8,
+                    roughness: 0.3,
+                    metalness: 0.2
+                });
+                textMoneroKon = new THREE.Mesh(geo1, mat1);
+                textMoneroKon.position.set(-8.5, 2.8, -4.1 + OFFSET);
+                textMoneroKon.castShadow = true;
+                scene.add(textMoneroKon);
+
+                portaMoneroKon = criarPortalMagico(0x66ff00, 0x00cc44);
+                portaMoneroKon.position.set(-6, 0, -4 + OFFSET);
+                scene.add(portaMoneroKon);
+
+                const geo2 = new THREE.TextGeometry('Monerotopia', {
+                    font: font,
+                    size: 0.8,
+                    height: 0.2,
+                    curveSegments: 12,
+                    bevelEnabled: true,
+                    bevelThickness: 0.02,
+                    bevelSize: 0.02,
+                    bevelSegments: 5
+                });
+                const mat2 = new THREE.MeshStandardMaterial({
+                    color: 0xffaa66,
+                    emissive: 0x664411,
+                    emissiveIntensity: 0.4,
+                    roughness: 0.3,
+                    metalness: 0.2
+                });
+                textMonerotopia = new THREE.Mesh(geo2, mat2);
+                textMonerotopia.position.set(3, 2.8, 4 - OFFSET);
+                textMonerotopia.castShadow = true;
+                scene.add(textMonerotopia);
+
+                portaMonerotopia = criarPortalMagico(0xffaa66, 0xcc7733);
+                portaMonerotopia.position.set(6, 0, 4.1 - OFFSET);
+                scene.add(portaMonerotopia);
+
+                setTimeout(ocultarInstrucoes, 3000);
+            },
+            undefined,
+            function(error) {
+                console.error('Erro ao carregar fonte:', error);
+            });
+        }
+
+        function gerarTexturaRedemoinhoRetangular(largura, altura) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, canvas.width * 0.8);
+            grad.addColorStop(0, '#ffffff');
+            grad.addColorStop(0.1, '#ff88cc');
+            grad.addColorStop(0.3, '#aa66ff');
+            grad.addColorStop(0.5, '#66ccff');
+            grad.addColorStop(0.7, '#88ff66');
+            grad.addColorStop(0.9, '#ffaa44');
+            grad.addColorStop(1, '#ff4488');
+
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            for (let i = 0; i < 20; i++) {
+                const ang = (i / 20) * Math.PI * 2;
+                const r = 30 + i * 25;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, r, r * 1.8, ang, 0, Math.PI * 2);
+                ctx.strokeStyle = `hsl(${i * 25 + 200}, 90%, 70%)`;
+                ctx.lineWidth = 14 - i * 0.3;
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            const grad2 = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 100);
+            grad2.addColorStop(0, 'rgba(255,255,255,0.8)');
+            grad2.addColorStop(0.5, 'rgba(255,200,200,0.4)');
+            grad2.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = grad2;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(1, 1);
+            return texture;
+        }
+
+        function criarPortalMagico(cor1, cor2) {
+            const grupo = new THREE.Group();
+            const largura = 1.1;
+            const altura = 2.0;
+            const centroY = altura / 2;
+
+            const materialMoldura = new THREE.MeshStandardMaterial({
+                color: cor1,
+                roughness: 0.5,
+                metalness: 0.3,
+                emissive: cor1,
+                emissiveIntensity: 0.2
+            });
+
+            const geoMarco = new THREE.BoxGeometry(0.1, altura + 0.2, 0.1);
+            const marcoEsq = new THREE.Mesh(geoMarco, materialMoldura);
+            marcoEsq.position.set(-largura / 2 - 0.05, centroY, 0);
+            grupo.add(marcoEsq);
+
+            const marcoDir = new THREE.Mesh(geoMarco, materialMoldura);
+            marcoDir.position.set(largura / 2 + 0.05, centroY, 0);
+            grupo.add(marcoDir);
+
+            const geoTopo = new THREE.BoxGeometry(largura + 0.2, 0.1, 0.1);
+            const topo = new THREE.Mesh(geoTopo, materialMoldura);
+            topo.position.set(0, altura + 0.1, 0);
+            grupo.add(topo);
+
+            const textura = gerarTexturaRedemoinhoRetangular(largura, altura);
+            const materialPortal = new THREE.MeshStandardMaterial({
+                map: textura,
+                emissiveMap: textura,
+                emissive: new THREE.Color(0xffffff),
+                emissiveIntensity: 0.9,
+                transparent: true,
+                opacity: 0.85,
+                side: THREE.DoubleSide,
+                roughness: 0.1,
+                metalness: 0.1
+            });
+            const geoPortal = new THREE.PlaneGeometry(largura - 0.1, altura - 0.1);
+            const portalMesh = new THREE.Mesh(geoPortal, materialPortal);
+            portalMesh.position.set(0, centroY, 0.01);
+            grupo.add(portalMesh);
+
+            const coresAnel = [0xff44aa, 0x44ddff, 0xffdd44, 0xaa66ff];
+            const aneis = [];
+            for (let i = 0; i < 6; i++) {
+                const raio = 0.15 + i * 0.12;
+                const geoAnel = new THREE.TorusGeometry(raio, 0.025, 8, 24);
+                const matAnel = new THREE.MeshStandardMaterial({
+                    color: coresAnel[i % coresAnel.length],
+                    emissive: coresAnel[i % coresAnel.length],
+                    emissiveIntensity: 0.8,
+                    transparent: true,
+                    opacity: 0.6
+                });
+                const anel = new THREE.Mesh(geoAnel, matAnel);
+                anel.position.set(0, centroY, 0.02);
+                anel.rotation.x = Math.PI / 2;
+                grupo.add(anel);
+                aneis.push(anel);
+            }
+
+            const count = 100;
+            const posicoes = new Float32Array(count * 3);
+            for (let i = 0; i < count; i++) {
+                const x = (Math.random() - 0.5) * (largura - 0.2);
+                const y = (Math.random() - 0.5) * (altura - 0.2) + centroY;
+                const z = (Math.random() - 0.5) * 0.2;
+                posicoes[i * 3] = x;
+                posicoes[i * 3 + 1] = y;
+                posicoes[i * 3 + 2] = z;
+            }
+            const geoPart = new THREE.BufferGeometry();
+            geoPart.setAttribute('position', new THREE.BufferAttribute(posicoes, 3));
+            const matPart = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.03,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                opacity: 0.9
+            });
+            const particulas = new THREE.Points(geoPart, matPart);
+            grupo.add(particulas);
+
+            const luzPortal = new THREE.PointLight(cor2, 0.8, 3);
+            luzPortal.position.set(0, centroY, 0.3);
+            grupo.add(luzPortal);
+
+            grupo.userData = {
+                portalMesh: portalMesh,
+                textura: textura,
+                aneis: aneis,
+                particulas: particulas,
+                luz: luzPortal,
+                materialPortal: materialPortal,
+                offset: 0
+            };
+
+            return grupo;
+        }
+
+        // ──────────────────────────────────────────────
+        // 6. EVENTOS DE TOQUE
+        // ──────────────────────────────────────────────
+        function ocultarInstrucoes() {
+            const painel = document.getElementById('instrucoes');
+            if (painel && painel.style.opacity !== '0') {
+                painel.style.opacity = '0';
+                setTimeout(() => { painel.style.display = 'none'; }, 600);
+            }
+        }
+
+        function onTouchStart(e) {
+            e.preventDefault();
+            ocultarInstrucoes();
+            const meioTela = window.innerWidth / 2;
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const toque = e.changedTouches[i];
+                if (toque.clientX < meioTela && !touchEsquerdo.ativo) {
+                    touchEsquerdo.ativo = true;
+                    touchEsquerdo.id = toque.identifier;
+                    touchEsquerdo.inicioX = toque.clientX;
+                    touchEsquerdo.inicioY = toque.clientY;
+                    touchEsquerdo.deltaX = 0;
+                    touchEsquerdo.deltaY = 0;
+                } else if (toque.clientX >= meioTela && !touchDireito.ativo) {
+                    touchDireito.ativo = true;
+                    touchDireito.id = toque.identifier;
+                    touchDireito.ultimoX = toque.clientX;
+                    touchDireito.ultimoY = toque.clientY;
+                }
+            }
+        }
+
+        function onTouchMove(e) {
+            e.preventDefault();
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const toque = e.changedTouches[i];
+                if (touchEsquerdo.ativo && toque.identifier === touchEsquerdo.id) {
+                    touchEsquerdo.deltaX = toque.clientX - touchEsquerdo.inicioX;
+                    touchEsquerdo.deltaY = toque.clientY - touchEsquerdo.inicioY;
+                } else if (touchDireito.ativo && toque.identifier === touchDireito.id) {
+                    const difX = toque.clientX - touchDireito.ultimoX;
+                    const difY = toque.clientY - touchDireito.ultimoY;
+                    cameraEuler.setFromQuaternion(camera.quaternion);
+                    cameraEuler.y -= difX * velVisao;
+                    cameraEuler.x -= difY * velVisao;
+                    cameraEuler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraEuler.x));
+                    camera.quaternion.setFromEuler(cameraEuler);
+                    touchDireito.ultimoX = toque.clientX;
+                    touchDireito.ultimoY = toque.clientY;
+                }
+            }
+        }
+
+        function onTouchEnd(e) {
+            e.preventDefault();
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const toque = e.changedTouches[i];
+                if (touchEsquerdo.ativo && toque.identifier === touchEsquerdo.id) {
+                    touchEsquerdo.ativo = false;
+                    touchEsquerdo.id = null;
+                    touchEsquerdo.deltaX = 0;
+                    touchEsquerdo.deltaY = 0;
+                } else if (touchDireito.ativo && toque.identifier === touchDireito.id) {
+                    touchDireito.ativo = false;
+                    touchDireito.id = null;
+                }
+            }
+        }
+
+        // ──────────────────────────────────────────────
+        // 6b. EVENTOS DE TECLADO (PC) - COM INVERSÃO W/S
+        // ──────────────────────────────────────────────
+        function onKeyDown(e) {
+            const key = e.key.toLowerCase();
+            if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
+                teclas[key] = true;
+                e.preventDefault();
+                ocultarInstrucoes();
+            }
+            if (key === 'escape') {
+                if (document.pointerLockElement) {
+                    document.exitPointerLock();
+                }
+            }
+        }
+
+        function onKeyUp(e) {
+            const key = e.key.toLowerCase();
+            if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
+                teclas[key] = false;
+                e.preventDefault();
+            }
+        }
+
+        // ──────────────────────────────────────────────
+        // 6c. EVENTOS DE MOUSE (PC) - CORRIGIDOS
+        // ──────────────────────────────────────────────
+        function onCanvasClick() {
+            if (!document.pointerLockElement) {
+                renderer.domElement.requestPointerLock();
+            }
+        }
+
+        function onPointerLockChange() {
+            mousePreso = document.pointerLockElement === renderer.domElement;
+            if (mousePreso) {
+                crosshair.classList.add('visivel');
+                document.body.style.cursor = 'none';
+            } else {
+                crosshair.classList.remove('visivel');
+                document.body.style.cursor = 'default';
+                mouseMovimentoX = 0;
+                mouseMovimentoY = 0;
+            }
+        }
+
+        function onMouseMove(e) {
+            if (mousePreso) {
+                // Usar movementX/movementY para capturar o movimento relativo do mouse
+                const movX = e.movementX || 0;
+                const movY = e.movementY || 0;
+
+                cameraEuler.setFromQuaternion(camera.quaternion);
+                cameraEuler.y -= movX * velVisao;
+                cameraEuler.x -= movY * velVisao;
+                cameraEuler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraEuler.x));
+                camera.quaternion.setFromEuler(cameraEuler);
+
+                ocultarInstrucoes();
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // ──────────────────────────────────────────────
+        // 7. MOVIMENTO COM COLISÃO E INVERSÃO W/S
+        // ──────────────────────────────────────────────
+        function aplicarColisoes(pos) {
+            const raio = 0.45;
+            for (let iter = 0; iter < 3; iter++) {
+                for (const cubo of listaCubos) {
+                    let closestX = Math.max(cubo.minX, Math.min(pos.x, cubo.maxX));
+                    let closestZ = Math.max(cubo.minZ, Math.min(pos.z, cubo.maxZ));
+                    let dx = pos.x - closestX;
+                    let dz = pos.z - closestZ;
+                    let dist = Math.sqrt(dx * dx + dz * dz);
+                    if (dist < raio && dist > 0.001) {
+                        let overlap = raio - dist;
+                        let normX = dx / dist;
+                        let normZ = dz / dist;
+                        pos.x += normX * overlap;
+                        pos.z += normZ * overlap;
+                    } else if (dist < 0.001) {
+                        let distToMinX = pos.x - cubo.minX;
+                        let distToMaxX = cubo.maxX - pos.x;
+                        let distToMinZ = pos.z - cubo.minZ;
+                        let distToMaxZ = cubo.maxZ - pos.z;
+                        let minDist = Math.min(distToMinX, distToMaxX, distToMinZ, distToMaxZ);
+                        if (minDist === distToMinX) pos.x = cubo.minX - raio;
+                        else if (minDist === distToMaxX) pos.x = cubo.maxX + raio;
+                        else if (minDist === distToMinZ) pos.z = cubo.minZ - raio;
+                        else if (minDist === distToMaxZ) pos.z = cubo.maxZ + raio;
+                    }
+                }
+            }
+            return pos;
+        }
+
+        function atualizarMovimento(dt) {
+            let moveX = 0;
+            let moveY = 0;
+
+            // Movimento por toque
+            if (touchEsquerdo.ativo) {
+                const limiteJoystick = 50;
+                moveX = touchEsquerdo.deltaX / limiteJoystick;
+                moveY = touchEsquerdo.deltaY / limiteJoystick;
+                moveX = Math.max(-1, Math.min(1, moveX));
+                moveY = Math.max(-1, Math.min(1, moveY));
+            }
+
+            // Movimento por teclado - W/S INVERTIDOS
+            if (!touchEsquerdo.ativo) {
+                // W = trás (-Y), S = frente (+Y)
+                if (teclas.w) moveY = -1;
+                else if (teclas.s) moveY = 1;
+                else moveY = 0;
+
+                if (teclas.d) moveX = 1;
+                else if (teclas.a) moveX = -1;
+                else moveX = 0;
+
+                if (moveX !== 0 && moveY !== 0) {
+                    moveX *= 0.7071;
+                    moveY *= 0.7071;
+                }
+            }
+
+            if (moveX !== 0 || moveY !== 0) {
+                let direcao = new THREE.Vector3(moveX, 0, moveY);
+                cameraEuler.setFromQuaternion(camera.quaternion);
+                direcao.applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraEuler.y);
+                if (direcao.length() > 1) direcao.normalize();
+
+                const intensidade = Math.sqrt(moveX * moveX + moveY * moveY);
+                const velocidadeFinal = Math.min(1, intensidade) * velMovimento * dt;
+
+                let novaPos = camera.position.clone().addScaledVector(direcao, velocidadeFinal);
+                novaPos = aplicarColisoes(novaPos);
+
+                const limite = 19.5;
+                const dist = Math.sqrt(novaPos.x * novaPos.x + novaPos.z * novaPos.z);
+                if (dist < limite) {
+                    camera.position.copy(novaPos);
+                } else {
+                    const angulo = Math.atan2(novaPos.z, novaPos.x);
+                    camera.position.x = Math.cos(angulo) * limite;
+                    camera.position.z = Math.sin(angulo) * limite;
+                }
+                camera.position.y = alturaOlhos;
+            }
+        }
+
+        // ──────────────────────────────────────────────
+        // 8. DETECÇÃO DAS PORTAS
+        // ──────────────────────────────────────────────
+        function verificarPortas() {
+            const pos = camera.position;
+
+            if (pos.x >= areaPortaKon.minX && pos.x <= areaPortaKon.maxX &&
+                pos.z >= areaPortaKon.minZ && pos.z <= areaPortaKon.maxZ &&
+                !jaRedirecionouKon) {
+                jaRedirecionouKon = true;
+                mostrarAviso('MoneroKon...');
+                setTimeout(() => {
+                    window.open(DESTINO_KON, '_blank');
+                }, 400);
+            }
+
+            if (pos.x >= areaPortaTopia.minX && pos.x <= areaPortaTopia.maxX &&
+                pos.z >= areaPortaTopia.minZ && pos.z <= areaPortaTopia.maxZ &&
+                !jaRedirecionouTopia) {
+                jaRedirecionouTopia = true;
+                mostrarAviso('Monerotopia...');
+                setTimeout(() => {
+                    window.open(DESTINO_TOPIA, '_blank');
+                }, 400);
+            }
+
+            const area = window.areaPortalMoneroverse;
+            if (area) {
+                if (pos.x >= area.minX && pos.x <= area.maxX &&
+                    pos.z >= area.minZ && pos.z <= area.maxZ &&
+                    !jaRedirecionouMoneroverse) {
+                    jaRedirecionouMoneroverse = true;
+                    mostrarAviso('Browser...');
+                    setTimeout(() => {
+                        window.open(DESTINO_MONEROVERSE, '_blank');
+                    }, 400);
+                }
+                if (!(pos.x >= area.minX && pos.x <= area.maxX &&
+                        pos.z >= area.minZ && pos.z <= area.maxZ)) {
+                    jaRedirecionouMoneroverse = false;
+                }
+            }
+
+            if (!(pos.x >= areaPortaKon.minX && pos.x <= areaPortaKon.maxX &&
+                    pos.z >= areaPortaKon.minZ && pos.z <= areaPortaKon.maxZ)) {
+                jaRedirecionouKon = false;
+            }
+            if (!(pos.x >= areaPortaTopia.minX && pos.x <= areaPortaTopia.maxX &&
+                    pos.z >= areaPortaTopia.minZ && pos.z <= areaPortaTopia.maxZ)) {
+                jaRedirecionouTopia = false;
+            }
+        }
+
+        function mostrarAviso(texto) {
+            aviso.textContent = texto;
+            aviso.classList.add('visivel');
+            setTimeout(() => {
+                aviso.classList.remove('visivel');
+            }, 1500);
+        }
+
+        // ──────────────────────────────────────────────
+        // 9. ANIMAÇÃO
+        // ──────────────────────────────────────────────
+        function animarPortas(time) {
+            [portaMoneroKon, portaMonerotopia].forEach((porta, idx) => {
+                if (!porta) return;
+                const dados = porta.userData;
+                dados.offset += 0.008 * (idx === 0 ? 1 : -1);
+                dados.textura.offset.x = dados.offset;
+                dados.textura.offset.y = dados.offset * 0.3;
+
+                dados.aneis.forEach((anel, i) => {
+                    anel.rotation.z = time * (0.5 + i * 0.15) * (idx === 0 ? 1 : -1);
+                });
+
+                dados.particulas.rotation.y = time * 0.15 * (idx === 0 ? 1 : -1);
+                dados.particulas.rotation.x = 0.05 * Math.sin(time * 0.2 + idx);
+
+                const intensidade = 0.5 + 0.4 * Math.sin(time * 1.6 + idx * 2);
+                dados.luz.intensity = intensidade;
+                dados.materialPortal.emissiveIntensity = 0.7 + 0.3 * Math.sin(time * 1.3 + idx);
+            });
+
+            if (portalPretoEstrelas) {
+                const dados = portalPretoEstrelas.userData;
+                const estrelas = dados.estrelas;
+                const sizeAttr = estrelas.geometry.attributes.size;
+                if (sizeAttr) {
+                    const sizes = sizeAttr.array;
+                    for (let i = 0; i < sizes.length; i++) {
+                        const base = 0.02 + (i % 10) * 0.006;
+                        sizes[i] = base * (0.7 + 0.3 * Math.sin(time * 2.0 + i * 1.7));
+                    }
+                    sizeAttr.needsUpdate = true;
+                }
+                dados.anel.rotation.z = time * 0.4;
+                dados.matAnel.emissiveIntensity = 0.8 + 0.4 * Math.sin(time * 0.9);
+                dados.luz.intensity = 0.5 + 0.3 * Math.sin(time * 1.2);
+                dados.matDisco.emissiveIntensity = 0.2 + 0.15 * Math.sin(time * 0.7);
+            }
+        }
+
+        function animarMuro(time) {
+            if (!muroMagico) return;
+            const dados = muroMagico;
+            dados.offset += 0.005;
+            dados.textura.offset.x = dados.offset;
+            dados.textura.offset.y = dados.offset * 0.2;
+
+            const brilho = 0.8 + 0.4 * Math.sin(time * 0.8);
+            dados.materialCilindro.emissiveIntensity = brilho;
+
+            dados.anelBase.material.emissiveIntensity = 0.6 + 0.3 * Math.sin(time * 0.9 + 0.5);
+            dados.anelTopo.material.emissiveIntensity = 0.6 + 0.3 * Math.sin(time * 0.9 + 1.2);
+
+            const pos = dados.particulas.geometry.attributes.position.array;
+            const vel = dados.velocidades;
+            for (let i = 0; i < dados.count; i++) {
+                vel[i].ang += 0.002 * (1 + i * 0.005);
+                vel[i].y += vel[i].yVel * 0.02;
+                if (vel[i].y > 4.2) vel[i].yVel = -Math.abs(vel[i].yVel);
+                if (vel[i].y < 0.2) vel[i].yVel = Math.abs(vel[i].yVel);
+                const r = vel[i].raio;
+                const ang = vel[i].ang;
+                pos[i * 3] = Math.cos(ang) * r;
+                pos[i * 3 + 1] = vel[i].y;
+                pos[i * 3 + 2] = Math.sin(ang) * r;
+            }
+            dados.particulas.geometry.attributes.position.needsUpdate = true;
+        }
+
+        function animarNevoa(time) {
+            if (!nuvensNevoa) return;
+            const pos = nuvensNevoa.geometry.attributes.position.array;
+            const dados = nuvensNevoa.userData;
+            const count = pos.length / 3;
+            for (let i = 0; i < count; i++) {
+                const idx3 = i * 3;
+                const ang = Math.atan2(pos[idx3 + 2], pos[idx3]) + dados.velocidades[i].ang;
+                const r = Math.sqrt(pos[idx3] * pos[idx3] + pos[idx3 + 2] * pos[idx3 + 2]);
+                pos[idx3] = Math.cos(ang) * r;
+                pos[idx3 + 2] = Math.sin(ang) * r;
+                pos[idx3 + 1] += dados.velocidades[i].yVel;
+                if (pos[idx3 + 1] > 13) pos[idx3 + 1] = 1;
+                if (pos[idx3 + 1] < 1) pos[idx3 + 1] = 13;
+            }
+            nuvensNevoa.geometry.attributes.position.needsUpdate = true;
+        }
+
+        // ──────────────────────────────────────────────
+        // 10. LOOP PRINCIPAL
+        // ──────────────────────────────────────────────
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const dt = Math.min(clock.getDelta(), 0.05);
+            const elapsed = clock.elapsedTime;
+
+            atualizarMovimento(dt);
+            animarPortas(elapsed);
+            animarMuro(elapsed);
+            animarNevoa(elapsed);
+            verificarPortas();
+
+            renderer.render(scene, camera);
+        }
+
+        // ──────────────────────────────────────────────
+        // 11. INICIAR
+        // ──────────────────────────────────────────────
+        window.onload = init;
+    </script>
+</body>
+</html>
