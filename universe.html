@@ -526,9 +526,9 @@
         'Payment': 'https://moneroverse.com/astos/pagamento.webp'
       },
       moons: {
-        'Lua A': 'https://moneroverse.com/astos/lua.webp',
-        'Lua B': 'https://moneroverse.com/astos/lua.webp',
-        'Lua C': 'https://moneroverse.com/astos/lua.webp'
+        'Moon 13': 'https://moneroverse.com/astos/lua.webp',
+        'Moon 33': 'https://moneroverse.com/astos/lua.webp',
+        'Moon 21': 'https://moneroverse.com/astos/lua.webp'
       }
     };
 
@@ -602,7 +602,7 @@
         titulo: 'Events',
         descricao: 'A world where you can find key community events.',
         links: [
-          { nome: 'Explore Planet', url: 'https://www.moneroverse.com/events.html' }
+          { nome: 'Explore Planet', url: 'events.html' }
         ]
       },
       {
@@ -688,7 +688,7 @@
 
               moons.push({
                 name: moonName,
-                desc: `Lua ${m+1} de ${name}. Órbita auxiliar para serviços relacionados.`,
+                desc: `Moon ${m+1} of ${name}. Auxiliary orbit.`,
                 link: links.length > 0 ? links[0].url : '#',
                 textureUrl: getMoonTexture(moonName),
                 size: moonSize,
