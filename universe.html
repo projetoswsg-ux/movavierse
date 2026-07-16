@@ -565,10 +565,9 @@
     const PLANET_DATA_LIST = [
       {
         titulo: 'Marketplace',
-        descricao: '⭐ Marketplace descentralizado para negociar produtos e serviços com privacidade total.',
+        descricao: 'Locked environment.',
         links: [
-          { nome: '🛒 Monero Market', url: 'https://moneromarket.io' },
-          { nome: '🛍️ OpenBazaar', url: 'https://openbazaar.org' }
+          { nome: '🔐', url: 'Explore' }
         ]
       },
       {
@@ -2363,7 +2362,7 @@
       planetSubtitle.textContent = `Lua de ${planetData.name}`;
       planetDesc.textContent = moon.desc || `Lua orbitando o planeta ${planetData.name}.`;
       
-      const moonLinks = [{ nome: '🌙 Link da Lua', url: moon.link || planetData.links[0]?.url || '#' }];
+      const moonLinks = [{ nome: 'Moon', url: moon.link || planetData.links[0]?.url || '#' }];
       planetLinksContainer.innerHTML = renderLinks(moonLinks);
       sunPrice.style.display = 'none';
       card.classList.add('active');
