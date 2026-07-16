@@ -533,11 +533,11 @@
     };
 
     function getPlanetTexture(planetName) {
-      return TEXTURE_MAP.planets[planetName] || 'https://picsum.photos/seed/default_planet/512/512';
+      return TEXTURE_MAP.planets[planetName] || 'https://moneroverse.com/astos/lua.webp';
     }
 
     function getMoonTexture(moonName) {
-      return TEXTURE_MAP.moons[moonName] || 'https://picsum.photos/seed/default_moon/256/256';
+      return TEXTURE_MAP.moons[moonName] || 'https://moneroverse.com/astos/lua.webp';
     }
 
     // ============================================================
@@ -699,8 +699,8 @@
             }
           }
 
-          const orbitType = ['Interna', 'Média', 'Externa', 'Periférica', 'Distante'][Math.min(orbit, 4)];
-          const subtitle = `Sistema Monero • Órbita ${orbit + 1} • ${orbitType}`;
+          const orbitType = ['Internal', 'Average', 'External', 'Peripheral', 'Distant'][Math.min(orbit, 4)];
+          const subtitle = `Monero System • Orbit ${orbit + 1} • ${orbitType}`;
 
           planets.push({
             name,
@@ -728,9 +728,9 @@
     const PLANET_DATA = generateOrganizedPlanetData();
 
     const SUN_DATA = {
-      name: 'Sun Monero',
-      subtitle: 'Central System • Mother Star',
-      desc: 'The Monero Sun represents the vital energy of the Monero ecosystem. It was born in 2014 through the efforts of a group of anonymous developers who built it upon a groundbreaking cryptographic protocol known as CryptoNote, created under the pseudonym Nicolas van Saberhagen. ' ,
+      name: 'Core Power',
+      subtitle: 'Monero • Mother Star',
+      desc: 'Where Monero energy is created through eternal battle, exploring this star is key. ' ,
       size: ORBIT_CONFIG.sunRadius,
       textureUrl: TEXTURE_MAP.sun
     };
@@ -1900,7 +1900,7 @@
       isZooming = true;
       zoomTarget = index;
       
-      zoomIndicator.textContent = `🔭 Navegando para ${data.name}...`;
+      zoomIndicator.textContent = `Sailing ${data.name}...`;
       zoomIndicator.classList.add('show');
       
       card.classList.remove('active');
@@ -1921,7 +1921,7 @@
       isZooming = true;
       zoomTarget = 'sun';
       
-      zoomIndicator.textContent = `🔭 Navegando para o Sol Monero...`;
+      zoomIndicator.textContent = `Sailing...`;
       zoomIndicator.classList.add('show');
       
       card.classList.remove('active');
@@ -2295,7 +2295,7 @@
     const sunPrice = document.getElementById('sun-price-info');
 
     function updateSunPriceDisplay() {
-      const priceText = currentPrice ? `$ ${currentPrice.toFixed(2)} USD` : 'carregando...';
+      const priceText = currentPrice ? `$ ${currentPrice.toFixed(2)} USD` : 'loading...';
       const change = priceChangePercent || 0;
       const sign = change >= 0 ? '+' : '';
       const changeText = `${sign}${change.toFixed(2)}%`;
@@ -2346,9 +2346,9 @@
       if (!moons || !moons[moonIdx]) return;
       const moon = moons[moonIdx];
       const planetData = PLANET_DATA[planetIdx];
-      planetName.textContent = `🌙 ${moon.name}`;
-      planetSubtitle.textContent = `Lua de ${planetData.name}`;
-      planetDesc.textContent = moon.desc || `Lua orbitando o planeta ${planetData.name}.`;
+      planetName.textContent = ` ${moon.name}`;
+      planetSubtitle.textContent = `Moon ${planetData.name}`;
+      planetDesc.textContent = moon.desc || `Moon orbiting ${planetData.name}.`;
       
       const moonLinks = [{ nome: 'Moon', url: moon.link || planetData.links[0]?.url || '#' }];
       planetLinksContainer.innerHTML = renderLinks(moonLinks);
@@ -2375,7 +2375,7 @@
       planetSubtitle.textContent = 'Singularity';
       planetDesc.textContent = 'Locked environment';
       const bhLinks = [
-        { nome: '🔐 ', url: '#' },
+        { nome: '🔐 ', url: 'universe.html' },
         
       ];
       planetLinksContainer.innerHTML = renderLinks(bhLinks);
@@ -2629,7 +2629,7 @@
     }, 5000);
 
     updateCameraFromAngles();
-    console.log('🚀 Cometa com cauda de crescimento acelerado!');
+    console.log('Comet');
   </script>
 </body>
 </html>
