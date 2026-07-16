@@ -1956,7 +1956,7 @@
       isZooming = true;
       zoomTarget = 'blackhole';
       
-      zoomIndicator.textContent = `🌀 Navegando para o Buraco Negro...`;
+      zoomIndicator.textContent = `Black hole...`;
       zoomIndicator.classList.add('show');
       
       card.classList.remove('active');
@@ -2385,12 +2385,12 @@
     }
 
     function showBlackHoleCard() {
-      planetName.textContent = '🌀 Buraco Negro Supermassivo';
-      planetSubtitle.textContent = '⏳ Singularidade • Fronteira Final';
-      planetDesc.textContent = 'Um buraco negro de massa estelar que orbita nas bordas do sistema Monero. Sua imensa gravidade distorce o espaço-tempo, criando um efeito de espaguetificação que estica a matéria em direção ao horizonte de eventos. Observado pela primeira vez em 2026, este objeto misterioso desafia as leis da física conhecida.';
+      planetName.textContent = 'Black hole';
+      planetSubtitle.textContent = 'Singularity';
+      planetDesc.textContent = 'Locked environment';
       const bhLinks = [
-        { nome: '📡 Artigo Científico', url: '#' },
-        { nome: '🔭 Observatório Monero', url: '#' }
+        { nome: '🔐 ', url: '#' },
+        
       ];
       planetLinksContainer.innerHTML = renderLinks(bhLinks);
       sunPrice.style.display = 'none';
