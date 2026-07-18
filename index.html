@@ -48,14 +48,14 @@
             -moz-user-select: all;
         }
 
-        /* Melhorias para dispositivos móveis */
+        
         .touch-optimized {
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
         }
 
-        /* Ajuste para botões em mobile */
+
         @media (max-width: 640px) {
             .mobile-full-width {
                 width: 100%;
@@ -67,19 +67,19 @@
             .mobile-p-3 {
                 padding: 12px;
             }
-            /* Aumenta área de toque em mobile */
+            
             .touch-target {
                 min-height: 44px;
                 min-width: 44px;
             }
         }
 
-        /* Scroll suave */
+        
         .smooth-scroll {
             scroll-behavior: smooth;
         }
 
-        /* Feedback tátil para mobile */
+    
         .haptic-feedback:active {
             transform: scale(0.97);
         }
@@ -89,7 +89,7 @@
 
     <div class="max-w-2xl w-full text-center space-y-8 md:space-y-12 px-4 sm:px-6">
         
-        <!-- Logo Section -->
+    
         <div class="relative flex justify-center">
             <div class="absolute w-32 h-32 sm:w-40 sm:h-40 bg-orange-600 rounded-full blur-[60px] neon-glow"></div>
             <img src="https://moneroverse.com/Picsart_26-07-18_14-45-31-304.png" 
@@ -100,7 +100,7 @@
                  height="auto">
         </div>
 
-        <!-- Headline Section -->
+    
         <div class="space-y-3 sm:space-y-4">
             <h1 class="text-4xl sm:text-5xl md:text-7xl tracking-tighter glow">
                 <span class="text-[#FF6600] font-thin">Monero</span>
@@ -112,7 +112,7 @@
             </p>
         </div>
 
-        <!-- Área de texto copiável - Otimizada para mobile -->
+    
         <div class="space-y-2">
             <div class="flex items-center gap-2 bg-gray-900/50 backdrop-blur-sm border border-gray-800 p-2 rounded-xl max-w-2xl w-full hover:border-orange-500/30 transition-all duration-300">
                 <code id="chaveCopiar" 
@@ -133,16 +133,16 @@
                               stroke-width="2" 
                               d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
                     </svg>
-                    <span id="feedbackCopiar" 
+                    <span id="✓" 
                           class="absolute -top-10 right-0 text-xs text-green-400 opacity-0 transition-all duration-300 pointer-events-none whitespace-nowrap">
-                        ✓ Copiado!
+                        ✓ 
                     </span>
                 </button>
             </div>
-            <p class="text-gray-500 text-xs touch-optimized">Toque no texto ou no botão para copiar</p>
+           
         </div>
 
-        <!-- Call to Action - Otimizado para mobile -->
+        
         <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 w-full">
             <a href="https://twitter.com/moneroverse" 
                target="_blank" 
@@ -155,7 +155,7 @@
             </a>
         </div>
 
-        <!-- Footer Links - Otimizado para mobile -->
+        
         <div class="pt-6 sm:pt-12 flex justify-center space-x-8 sm:space-x-6 text-gray-500 text-sm">
             <a href="https://codeberg.org/Moneroverse/Moneroverse" 
                target="_blank" 
@@ -175,15 +175,14 @@
 
     <script>
     function copiarChave() {
-        const texto = document.getElementById('chaveCopiar').textContent.trim();
-        const feedback = document.getElementById('feedbackCopiar');
+        const texto = document.getElementById('✓').textContent.trim();
+        const feedback = document.getElementById('✓');
         const btn = event.currentTarget;
         const svg = btn.querySelector('svg');
         
-        // Limpa espaços extras
+        
         const textoLimpo = texto.replace(/\s+/g, ' ').trim();
         
-        // Tenta usar a API Clipboard moderna
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(textoLimpo).then(() => {
                 mostrarFeedback(feedback, svg);
@@ -214,7 +213,7 @@
     }
 
     function copiarFallback(texto, feedback, svg) {
-        // Cria um elemento temporário para copiar
+    
         const tempInput = document.createElement('input');
         tempInput.value = texto;
         tempInput.style.position = 'fixed';
@@ -227,38 +226,38 @@
             document.execCommand('copy');
             mostrarFeedback(feedback, svg);
         } catch (err) {
-            // Se falhar, tenta selecionar o texto
-            const codeElement = document.getElementById('chaveCopiar');
+            
+            const codeElement = document.getElementById('✓');
             const range = document.createRange();
             range.selectNode(codeElement);
             window.getSelection().removeAllRanges();
             window.getSelection().addRange(range);
             
-            // Feedback alternativo
-            feedback.textContent = '✓ Selecione e copie';
+        
+            feedback.textContent = '✓ ';
             feedback.classList.remove('opacity-0');
             feedback.classList.add('opacity-100');
             setTimeout(() => {
                 feedback.classList.remove('opacity-100');
                 feedback.classList.add('opacity-0');
-                feedback.textContent = '✓ Copiado!';
+                feedback.textContent = '✓ ';
             }, 3000);
         }
         
         document.body.removeChild(tempInput);
     }
 
-    // Copia ao clicar no texto (mobile-friendly)
-    document.getElementById('chaveCopiar').addEventListener('click', function(e) {
-        // Previne seleção dupla
+    
+    document.getElementById('✓').addEventListener('click', function(e) {
+
         e.stopPropagation();
         copiarChave.call(this);
     });
 
-    // Previne seleção acidental em mobile
+
     document.querySelectorAll('.touch-optimized').forEach(el => {
         el.addEventListener('touchstart', function(e) {
-            // Permite seleção apenas no elemento de texto
+            
             if (this.id !== 'chaveCopiar') {
                 e.preventDefault();
             }
