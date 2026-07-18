@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Moneroverse</title>
     <link rel="icon" href="https://moneroverse.com/Picsart_26-07-18_14-45-31-304.png" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,6 +13,12 @@
             font-family: 'Inter', sans-serif;
             background-color: #0a0a0a;
             color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            -webkit-tap-highlight-color: transparent;
         }
         .glow {
             text-shadow: 0 0 20px rgba(255, 102, 0, 0.5);
@@ -27,7 +33,7 @@
         .bg-gradient-radial {
             background: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%);
         }
-     
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -35,73 +41,133 @@
         .fade-in {
             animation: fadeIn 0.3s ease-out;
         }
-  
+        
         .select-all {
             user-select: all;
             -webkit-user-select: all;
             -moz-user-select: all;
         }
+
+        /* Melhorias para dispositivos móveis */
+        .touch-optimized {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* Ajuste para botões em mobile */
+        @media (max-width: 640px) {
+            .mobile-full-width {
+                width: 100%;
+                justify-content: center;
+            }
+            .mobile-text-sm {
+                font-size: 0.875rem;
+            }
+            .mobile-p-3 {
+                padding: 12px;
+            }
+            /* Aumenta área de toque em mobile */
+            .touch-target {
+                min-height: 44px;
+                min-width: 44px;
+            }
+        }
+
+        /* Scroll suave */
+        .smooth-scroll {
+            scroll-behavior: smooth;
+        }
+
+        /* Feedback tátil para mobile */
+        .haptic-feedback:active {
+            transform: scale(0.97);
+        }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center bg-gradient-radial p-4">
+<body>
 
-    <div class="max-w-2xl w-full text-center space-y-12">
+    <div class="max-w-2xl w-full text-center space-y-8 md:space-y-12 px-4 sm:px-6">
         
+        <!-- Logo Section -->
         <div class="relative flex justify-center">
-            <div class="absolute w-40 h-40 bg-orange-600 rounded-full blur-[60px] neon-glow"></div>
-            <img src="https://moneroverse.com/Picsart_26-07-18_14-45-31-304.png" alt="Moneroverse Logo" class="w-40 h-auto relative z-10 drop-shadow-2xl">
+            <div class="absolute w-32 h-32 sm:w-40 sm:h-40 bg-orange-600 rounded-full blur-[60px] neon-glow"></div>
+            <img src="https://moneroverse.com/Picsart_26-07-18_14-45-31-304.png" 
+                 alt="Moneroverse Logo" 
+                 class="w-32 h-auto sm:w-40 relative z-10 drop-shadow-2xl"
+                 loading="lazy"
+                 width="160"
+                 height="auto">
         </div>
 
         <!-- Headline Section -->
-        <div class="space-y-4">
-            <h1 class="text-5xl md:text-7xl tracking-tighter glow">
-                <span class="text-[#FF6600] font-thin">Monero</span><span class="text-white font-medium">verse</span>
+        <div class="space-y-3 sm:space-y-4">
+            <h1 class="text-4xl sm:text-5xl md:text-7xl tracking-tighter glow">
+                <span class="text-[#FF6600] font-thin">Monero</span>
+                <span class="text-white font-medium">verse</span>
             </h1>
-            <p class="text-gray-400 text-lg md:text-xl font-light">
+            <p class="text-gray-400 text-base sm:text-lg md:text-xl font-light px-2">
                 The frontier of the Monero experience.<br>
                 Support this initiative!
             </p>
         </div>
 
-        <!-- Área de texto copiável -->
+        <!-- Área de texto copiável - Otimizada para mobile -->
         <div class="space-y-2">
-            <div class="flex items-center space-x-2 bg-gray-900/50 backdrop-blur-sm border border-gray-800 p-2 rounded-xl max-w-2xl w-full hover:border-orange-500/30 transition-all duration-300">
-                <code id="chaveCopiar" class="flex-1 text-sm break-all text-gray-300 p-2 select-all font-mono">
+            <div class="flex items-center gap-2 bg-gray-900/50 backdrop-blur-sm border border-gray-800 p-2 rounded-xl max-w-2xl w-full hover:border-orange-500/30 transition-all duration-300">
+                <code id="chaveCopiar" 
+                      class="flex-1 text-xs sm:text-sm break-all text-gray-300 p-2 select-all font-mono touch-optimized"
+                      style="word-break: break-all; overflow-wrap: break-word;">
                     84TDpkzas6CRSWQFiACWNThWbk5kCQJV4aRFaeM6cWuyFBPyL9tWiZrbLPL7u3azYYW7g6ctLFRbjUwb8hCwNREa6mbgfDU
                 </code>
-                <button onclick="copiarChave()" class="p-2 hover:bg-gray-800 rounded-lg transition-all duration-300 group relative" title="Copiar">
-                    <svg class="w-5 h-5 text-gray-400 group-hover:text-orange-500 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                <button onclick="copiarChave()" 
+                        class="p-3 sm:p-2 hover:bg-gray-800 rounded-lg transition-all duration-300 group relative touch-target haptic-feedback flex-shrink-0"
+                        title="Copiar"
+                        aria-label="Copiar texto">
+                    <svg class="w-5 h-5 sm:w-5 sm:h-5 text-gray-400 group-hover:text-orange-500 transition-all duration-300" 
+                         fill="none" 
+                         stroke="currentColor" 
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" 
+                              stroke-linejoin="round" 
+                              stroke-width="2" 
+                              d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
                     </svg>
-                    <span id="feedbackCopiar" class="absolute -top-8 right-0 text-xs text-green-400 opacity-0 transition-all duration-300 pointer-events-none">
-                         ✓
+                    <span id="feedbackCopiar" 
+                          class="absolute -top-10 right-0 text-xs text-green-400 opacity-0 transition-all duration-300 pointer-events-none whitespace-nowrap">
+                        ✓ Copiado!
                     </span>
                 </button>
             </div>
-            
+            <p class="text-gray-500 text-xs touch-optimized">Toque no texto ou no botão para copiar</p>
         </div>
 
-        <!-- Call to Action -->
-        <div class="flex flex-col sm:flex-row justify-center gap-4">
-            <a href="https://twitter.com/moneroverse" target="_blank" class="bg-white hover:bg-gray-200 text-black font-semibold px-8 py-3 rounded-xl transition duration-300">
+        <!-- Call to Action - Otimizado para mobile -->
+        <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 w-full">
+            <a href="https://twitter.com/moneroverse" 
+               target="_blank" 
+               class="bg-white hover:bg-gray-200 text-black font-semibold px-6 sm:px-8 py-3 rounded-xl transition duration-300 w-full sm:w-auto touch-target haptic-feedback text-center">
                 Follow on X
             </a>
-            <a href="mailto:moneroverse@proton.me" class="border border-gray-700 hover:border-orange-600 hover:text-orange-500 text-white font-semibold px-8 py-3 rounded-xl transition duration-300">
+            <a href="mailto:moneroverse@proton.me" 
+               class="border border-gray-700 hover:border-orange-600 hover:text-orange-500 text-white font-semibold px-6 sm:px-8 py-3 rounded-xl transition duration-300 w-full sm:w-auto touch-target haptic-feedback text-center">
                 Contact Us
             </a>
         </div>
 
-    
-        <div class="pt-12 flex justify-center space-x-6 text-gray-500 text-sm">
-      
-            <a href="https://codeberg.org/Moneroverse/Moneroverse" target="_blank" class="hover:text-orange-500 transition">
-                <i class="fab fa-github text-2xl"></i>
+        <!-- Footer Links - Otimizado para mobile -->
+        <div class="pt-6 sm:pt-12 flex justify-center space-x-8 sm:space-x-6 text-gray-500 text-sm">
+            <a href="https://codeberg.org/Moneroverse/Moneroverse" 
+               target="_blank" 
+               class="hover:text-orange-500 transition touch-target haptic-feedback">
+                <i class="fab fa-github text-2xl sm:text-2xl"></i>
                 <span class="sr-only">Codeberg</span>
             </a>
             
-            <!-- X (Twitter) - versão mais recente -->
-            <a href="https://twitter.com/moneroverse" target="_blank" class="hover:text-orange-500 transition">
-                <i class="fa-brands fa-x-twitter text-2xl"></i>
+            <a href="https://twitter.com/moneroverse" 
+               target="_blank" 
+               class="hover:text-orange-500 transition touch-target haptic-feedback">
+                <i class="fa-brands fa-x-twitter text-2xl sm:text-2xl"></i>
                 <span class="sr-only">X</span>
             </a>
         </div>
@@ -109,59 +175,94 @@
 
     <script>
     function copiarChave() {
-        const texto = document.getElementById('chaveCopiar').textContent;
+        const texto = document.getElementById('chaveCopiar').textContent.trim();
         const feedback = document.getElementById('feedbackCopiar');
         const btn = event.currentTarget;
         const svg = btn.querySelector('svg');
         
-       
+        // Limpa espaços extras
+        const textoLimpo = texto.replace(/\s+/g, ' ').trim();
+        
+        // Tenta usar a API Clipboard moderna
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(texto).then(() => {
-           
-                feedback.classList.remove('opacity-0');
-                feedback.classList.add('opacity-100');
-                svg.classList.add('text-green-400');
-                svg.classList.remove('text-gray-400');
-                
-                setTimeout(() => {
-                    feedback.classList.remove('opacity-100');
-                    feedback.classList.add('opacity-0');
-                    svg.classList.remove('text-green-400');
-                    svg.classList.add('text-gray-400');
-                }, 2000);
+            navigator.clipboard.writeText(textoLimpo).then(() => {
+                mostrarFeedback(feedback, svg);
             }).catch(() => {
-               
-                copiarFallback(texto);
+                copiarFallback(textoLimpo, feedback, svg);
             });
         } else {
-            
-            copiarFallback(texto);
+            copiarFallback(textoLimpo, feedback, svg);
         }
     }
 
-    function copiarFallback(texto) {
-        // Cria um elemento temporário para copiar
-        const tempInput = document.createElement('input');
-        tempInput.value = texto;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand('copy');
-        document.body.removeChild(tempInput);
-        
- 
-        const feedback = document.getElementById('feedbackCopiar');
+    function mostrarFeedback(feedback, svg) {
         feedback.classList.remove('opacity-0');
         feedback.classList.add('opacity-100');
+        if (svg) {
+            svg.classList.add('text-green-400');
+            svg.classList.remove('text-gray-400');
+        }
         
         setTimeout(() => {
             feedback.classList.remove('opacity-100');
             feedback.classList.add('opacity-0');
+            if (svg) {
+                svg.classList.remove('text-green-400');
+                svg.classList.add('text-gray-400');
+            }
         }, 2000);
     }
 
- 
-    document.getElementById('chaveCopiar').addEventListener('click', function() {
+    function copiarFallback(texto, feedback, svg) {
+        // Cria um elemento temporário para copiar
+        const tempInput = document.createElement('input');
+        tempInput.value = texto;
+        tempInput.style.position = 'fixed';
+        tempInput.style.opacity = '0';
+        tempInput.style.pointerEvents = 'none';
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        
+        try {
+            document.execCommand('copy');
+            mostrarFeedback(feedback, svg);
+        } catch (err) {
+            // Se falhar, tenta selecionar o texto
+            const codeElement = document.getElementById('chaveCopiar');
+            const range = document.createRange();
+            range.selectNode(codeElement);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            
+            // Feedback alternativo
+            feedback.textContent = '✓ Selecione e copie';
+            feedback.classList.remove('opacity-0');
+            feedback.classList.add('opacity-100');
+            setTimeout(() => {
+                feedback.classList.remove('opacity-100');
+                feedback.classList.add('opacity-0');
+                feedback.textContent = '✓ Copiado!';
+            }, 3000);
+        }
+        
+        document.body.removeChild(tempInput);
+    }
+
+    // Copia ao clicar no texto (mobile-friendly)
+    document.getElementById('chaveCopiar').addEventListener('click', function(e) {
+        // Previne seleção dupla
+        e.stopPropagation();
         copiarChave.call(this);
+    });
+
+    // Previne seleção acidental em mobile
+    document.querySelectorAll('.touch-optimized').forEach(el => {
+        el.addEventListener('touchstart', function(e) {
+            // Permite seleção apenas no elemento de texto
+            if (this.id !== 'chaveCopiar') {
+                e.preventDefault();
+            }
+        }, { passive: true });
     });
     </script>
 </body>
