@@ -48,14 +48,14 @@
             -moz-user-select: all;
         }
 
-        
+       
         .touch-optimized {
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
         }
 
-
+    
         @media (max-width: 640px) {
             .mobile-full-width {
                 width: 100%;
@@ -74,12 +74,11 @@
             }
         }
 
-        
         .smooth-scroll {
             scroll-behavior: smooth;
         }
 
-    
+ 
         .haptic-feedback:active {
             transform: scale(0.97);
         }
@@ -88,8 +87,7 @@
 <body>
 
     <div class="max-w-2xl w-full text-center space-y-8 md:space-y-12 px-4 sm:px-6">
-        
-    
+
         <div class="relative flex justify-center">
             <div class="absolute w-32 h-32 sm:w-40 sm:h-40 bg-orange-600 rounded-full blur-[60px] neon-glow"></div>
             <img src="https://moneroverse.com/Picsart_26-07-18_14-45-31-304.png" 
@@ -100,7 +98,6 @@
                  height="auto">
         </div>
 
-    
         <div class="space-y-3 sm:space-y-4">
             <h1 class="text-4xl sm:text-5xl md:text-7xl tracking-tighter glow">
                 <span class="text-[#FF6600] font-thin">Monero</span>
@@ -112,7 +109,7 @@
             </p>
         </div>
 
-    
+       
         <div class="space-y-2">
             <div class="flex items-center gap-2 bg-gray-900/50 backdrop-blur-sm border border-gray-800 p-2 rounded-xl max-w-2xl w-full hover:border-orange-500/30 transition-all duration-300">
                 <code id="chaveCopiar" 
@@ -133,13 +130,13 @@
                               stroke-width="2" 
                               d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
                     </svg>
-                    <span id="✓" 
+                    <span id="feedbackCopiar" 
                           class="absolute -top-10 right-0 text-xs text-green-400 opacity-0 transition-all duration-300 pointer-events-none whitespace-nowrap">
-                        ✓ 
+                        ✓ OK!
                     </span>
                 </button>
             </div>
-           
+            <p class="text-gray-500 text-xs touch-optimized">Toque no texto ou no botão para copiar</p>
         </div>
 
         
@@ -155,7 +152,7 @@
             </a>
         </div>
 
-        
+
         <div class="pt-6 sm:pt-12 flex justify-center space-x-8 sm:space-x-6 text-gray-500 text-sm">
             <a href="https://codeberg.org/Moneroverse/Moneroverse" 
                target="_blank" 
@@ -175,13 +172,14 @@
 
     <script>
     function copiarChave() {
-        const texto = document.getElementById('✓').textContent.trim();
-        const feedback = document.getElementById('✓');
+        const texto = document.getElementById('chaveCopiar').textContent.trim();
+        const feedback = document.getElementById('feedbackCopiar');
         const btn = event.currentTarget;
         const svg = btn.querySelector('svg');
         
-        
+
         const textoLimpo = texto.replace(/\s+/g, ' ').trim();
+        
         
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(textoLimpo).then(() => {
@@ -226,21 +224,21 @@
             document.execCommand('copy');
             mostrarFeedback(feedback, svg);
         } catch (err) {
-            
-            const codeElement = document.getElementById('✓');
+           
+            const codeElement = document.getElementById('chaveCopiar');
             const range = document.createRange();
             range.selectNode(codeElement);
             window.getSelection().removeAllRanges();
             window.getSelection().addRange(range);
             
-        
-            feedback.textContent = '✓ ';
+          
+            feedback.textContent = '✓ Selecione e copie';
             feedback.classList.remove('opacity-0');
             feedback.classList.add('opacity-100');
             setTimeout(() => {
                 feedback.classList.remove('opacity-100');
                 feedback.classList.add('opacity-0');
-                feedback.textContent = '✓ ';
+                feedback.textContent = '✓ Copiado!';
             }, 3000);
         }
         
@@ -248,16 +246,16 @@
     }
 
     
-    document.getElementById('✓').addEventListener('click', function(e) {
-
+    document.getElementById('chaveCopiar').addEventListener('click', function(e) {
+        
         e.stopPropagation();
         copiarChave.call(this);
     });
 
-
+    
     document.querySelectorAll('.touch-optimized').forEach(el => {
         el.addEventListener('touchstart', function(e) {
-            
+      
             if (this.id !== 'chaveCopiar') {
                 e.preventDefault();
             }
