@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moneroverse </title>
+    <title>Moneroverse</title>
     <link rel="icon" href="https://moneroverse.com/Picsart_26-07-18_14-45-31-304.png" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -27,6 +27,20 @@
         .bg-gradient-radial {
             background: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%);
         }
+     
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+  
+        .select-all {
+            user-select: all;
+            -webkit-user-select: all;
+            -moz-user-select: all;
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center bg-gradient-radial p-4">
@@ -44,10 +58,26 @@
                 <span class="text-[#FF6600] font-thin">Monero</span><span class="text-white font-medium">verse</span>
             </h1>
             <p class="text-gray-400 text-lg md:text-xl font-light">
-    The frontier of the Monero experience.
-Support this initiative!
+                The frontier of the Monero experience.<br>
+                Support this initiative!
             </p>
-84TDpkzas6CRSWQFiACWNThWbk5kCQJV4aRFaeM6cWuyFBPyL9tWiZrbLPL7u3azYYW7g6ctLFRbjUwb8hCwNREa6mbgfDU
+        </div>
+
+        <!-- Área de texto copiável -->
+        <div class="space-y-2">
+            <div class="flex items-center space-x-2 bg-gray-900/50 backdrop-blur-sm border border-gray-800 p-2 rounded-xl max-w-2xl w-full hover:border-orange-500/30 transition-all duration-300">
+                <code id="chaveCopiar" class="flex-1 text-sm break-all text-gray-300 p-2 select-all font-mono">
+                    84TDpkzas6CRSWQFiACWNThWbk5kCQJV4aRFaeM6cWuyFBPyL9tWiZrbLPL7u3azYYW7g6ctLFRbjUwb8hCwNREa6mbgfDU
+                </code>
+                <button onclick="copiarChave()" class="p-2 hover:bg-gray-800 rounded-lg transition-all duration-300 group relative" title="Copiar">
+                    <svg class="w-5 h-5 text-gray-400 group-hover:text-orange-500 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                    </svg>
+                    <span id="feedbackCopiar" class="absolute -top-8 right-0 text-xs text-green-400 opacity-0 transition-all duration-300 pointer-events-none">
+                         ✓
+                    </span>
+                </button>
+            </div>
             
         </div>
 
@@ -61,20 +91,78 @@ Support this initiative!
             </a>
         </div>
 
-        <!-- Footer Links -->
-  <div class="pt-12 flex justify-center space-x-6 text-gray-500 text-sm">
-    <!-- GitHub -->
-    <a href="https://codeberg.org/Moneroverse/Moneroverse" target="_blank" class="hover:text-orange-500 transition">
-        <i class="fab fa-github text-2xl"></i>
-        <span class="sr-only">GitHub</span>
-    </a>
     
-    <!-- X (Twitter) - versão mais recente -->
-    <a href="https://twitter.com/moneroverse" target="_blank" class="hover:text-orange-500 transition">
-        <i class="fa-brands fa-x-twitter text-2xl"></i>
-        <span class="sr-only">X</span>
-    </a>
-</div>
+        <div class="pt-12 flex justify-center space-x-6 text-gray-500 text-sm">
+      
+            <a href="https://codeberg.org/Moneroverse/Moneroverse" target="_blank" class="hover:text-orange-500 transition">
+                <i class="fab fa-github text-2xl"></i>
+                <span class="sr-only">Codeberg</span>
+            </a>
+            
+            <!-- X (Twitter) - versão mais recente -->
+            <a href="https://twitter.com/moneroverse" target="_blank" class="hover:text-orange-500 transition">
+                <i class="fa-brands fa-x-twitter text-2xl"></i>
+                <span class="sr-only">X</span>
+            </a>
+        </div>
     </div>
+
+    <script>
+    function copiarChave() {
+        const texto = document.getElementById('chaveCopiar').textContent;
+        const feedback = document.getElementById('feedbackCopiar');
+        const btn = event.currentTarget;
+        const svg = btn.querySelector('svg');
+        
+       
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(texto).then(() => {
+           
+                feedback.classList.remove('opacity-0');
+                feedback.classList.add('opacity-100');
+                svg.classList.add('text-green-400');
+                svg.classList.remove('text-gray-400');
+                
+                setTimeout(() => {
+                    feedback.classList.remove('opacity-100');
+                    feedback.classList.add('opacity-0');
+                    svg.classList.remove('text-green-400');
+                    svg.classList.add('text-gray-400');
+                }, 2000);
+            }).catch(() => {
+               
+                copiarFallback(texto);
+            });
+        } else {
+            
+            copiarFallback(texto);
+        }
+    }
+
+    function copiarFallback(texto) {
+        // Cria um elemento temporário para copiar
+        const tempInput = document.createElement('input');
+        tempInput.value = texto;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        
+ 
+        const feedback = document.getElementById('feedbackCopiar');
+        feedback.classList.remove('opacity-0');
+        feedback.classList.add('opacity-100');
+        
+        setTimeout(() => {
+            feedback.classList.remove('opacity-100');
+            feedback.classList.add('opacity-0');
+        }, 2000);
+    }
+
+ 
+    document.getElementById('chaveCopiar').addEventListener('click', function() {
+        copiarChave.call(this);
+    });
+    </script>
 </body>
 </html>
